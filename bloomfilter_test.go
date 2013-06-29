@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"bytes"
+	"crypto/rand"
+	"encoding/base64"
 )
 
 func TestFilter(t *testing.T) {
 	dict_file := "" 
 	// SET THIS LINE TO *YOUR* DICT FILE
-	// dict_file = "/usr/share/dict/american-english" // ubuntu
+	//dict_file = "/usr/share/dict/american-english" // ubuntu
 	if dict_file == "" {
 		fmt.Printf("\n\n****\nset dict_file in TestFilter to be a full path to a dictionary file, and rerun\n****\n\n\n")
 		return
@@ -51,22 +53,40 @@ func TestFilter(t *testing.T) {
 			collisions++
 		}
 	}
-	// make sure gibberish is not found in the filter
-	sha1_ints,sha1_err := GetSHA1_ints("azzxxxdddhhhu")
-	if sha1_err != nil {
-		e := fmt.Sprintf("%s\n",sha1_err.Error())
-		t.Errorf(e)
-	}
-	_,in_filter,read_err := bf.Read(sha1_ints)
-	if read_err != nil {
-		e := fmt.Sprintf("%s\n",read_err.Error())
-		t.Errorf(e)
-	}		
-	if in_filter {
-		t.Errorf("non dict word was found in filter?")
-	}
-	
+
+	fmt.Printf("dictionary insert:\n")
 	fmt.Printf("writes: %d, collisions (false positives): %d\n",writes,collisions)
 	rate := 100.0 - ((float64(collisions)/float64(writes)) * 100.0)
-	fmt.Printf("filter of size %d will be correct %f of the time\n",size,rate)
+	fmt.Printf("filter of approxoimate size %d bits shows no collisions on %f pct of inserted dictionary words\n",size,rate)
+
+	iterations := 1000000 // int(math.Pow(26,float64(strlen))) 
+	for strlen := 4; strlen < 9; strlen++ {
+		fmt.Printf("\nrandom strings: %d iterations of rand strings of len %d\n",iterations,strlen)
+		rand_collisions := 0
+		for i := 0; i < iterations; i++ {
+			b := make([]byte,20) 
+			rand.Read(b) 
+			en := base64.StdEncoding // or URLEncoding 
+			d := make([]byte, en.EncodedLen(len(b))) 
+			en.Encode(d, b) 
+			s := string(d)
+			ss := s[0:strlen]
+			sha1_ints,sha1_err := GetSHA1_ints(ss)
+			if sha1_err != nil {
+				e := fmt.Sprintf("%s\n",sha1_err.Error())
+				t.Errorf(e)
+			}
+			_,in_filter,read_err := bf.Read(sha1_ints)
+			if read_err != nil {
+				e := fmt.Sprintf("%s\n",read_err.Error())
+				t.Errorf(e)
+			}		
+			if in_filter {
+				rand_collisions++
+			}
+		}
+		fmt.Printf("collisions (false positives) on random strings: %d\n",rand_collisions)
+		rate = 100.0 - ((float64(rand_collisions)/float64(iterations)) * 100.0)
+		fmt.Printf("populated dictionary filter of approximate size %d bits shows no collisions on %f pct of random len %d words\n",size,rate,strlen)
+	}
 }
