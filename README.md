@@ -9,8 +9,8 @@ http://en.wikipedia.org/wiki/Bloom_filter
 
 provides an explanation of what a bloom filter is. Essentially it is a probabilistic memebership
 function with good size characteristics. For example, we may wish to read in the words from
-the dictionary file and then test words that users enter to see if they are valid. The bloom filter
-can test this with over 99% accuracy using only 100k in a data structure.
+the dictionary file into the filter. Over 99% of the words can be entered into the filter before
+a collision occurs.
 
 The approach in this package for hashing items into the filter is to obtain the 160 bit SHA1
 hash of the original input item, which should give a good distribution. Then, this 160 bit
