@@ -1,3 +1,4 @@
+// A Bloom Filter implementation using SHA1 for hashing.
 package bloomfilter
 
 import (
@@ -13,7 +14,7 @@ type BloomFilter struct {
 	bitset *bitset.BitSet
 }
 
-// Construct a new BloomFilter intended to model n bits.
+// NewBloomFilter will construct a new BloomFilter intended to model n bits.
 // The BitSet constructor will round that number up to 
 // the next byte boundary. The BitSet should be adequately compact.
 // Values written into the bloom filter will use modulo to determine
@@ -27,7 +28,7 @@ func NewBloomFilter(n uint32) (*BloomFilter) {
 	return b
 }
 
-// Alias for the constructor
+// New is an alias for NewBloomFilter.
 func New(n uint32) (*BloomFilter) {
 	return NewBloomFilter(n)
 }
@@ -38,10 +39,7 @@ type SHA1_ints [5]uint32
 // The filter values corresponding to offsets derived from the SHA1-ints
 type FilterVals [5]bool
 
-// For a given string s:
-// 1. Get its sha1 hash
-// 2. For that 160 bit sha1, decompose it in to five 32 bit ints
-// 3. Return those as SHA1_ints
+// GetSHA1_ints will calculate the sha1 hash of a string. From this 160 bit hash, the five 32 bit ints are returned.
 func GetSHA1_ints(s string) (SHA1_ints,error) {
 	h := sha1.New()
 	io.WriteString(h,s)
@@ -65,15 +63,15 @@ func GetSHA1_ints(s string) (SHA1_ints,error) {
 	return sha1_ints,nil
 }
 
-// Return the size of the underlying BitSet. May be greater than
+// Size will return the size of the underlying BitSet. May be greater than
 // the arg provided to the constructor...the BitSet package rounds
 // up to a byte boundary.
 func (b *BloomFilter) Size() int {
 	return b.bitset.Size()
 }
 
-// For a set of SHA1_ints, write a truth value (1) into the bloom filter
-// at the modulo offset correlated to its value.
+// Write shall enter a true (1) value into the underlying BitSet at the
+// modulo offsets described by the sha1_ints (five 32-bit ints).
 // Returns a boolean indicating if there was a collision in the filter
 // (meaning all indexes to be set were already set to true)
 func (b *BloomFilter) Write(sha1_ints SHA1_ints) (bool,error) {
