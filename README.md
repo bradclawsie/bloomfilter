@@ -1,9 +1,11 @@
-bloomfilter
-===========
+[![License BSD](https://img.shields.io/badge/License-BSD-blue.svg)](http://opensource.org/licenses/BSD-3-Clause)
+[![Go Report Card](https://goreportcard.com/badge/github.com/bradclawsie/bloomfilter)](https://goreportcard.com/report/github.com/bradclawsie/bloomfilter)
+[![GoDoc](https://godoc.org/github.com/bradclawsie/httpshutdown?status.svg)](http://godoc.org/github.com/bradclawsie/bloomfilter)
+[![Build Status](https://travis-ci.org/bradclawsie/bloomfilter.png)](https://travis-ci.org/bradclawsie/bloomfilter)
 
-## About
+## bloomfilter
 
-This package attempts to implement a bloom filter in Go.
+This package implements a bloom filter in Go.
 
 http://en.wikipedia.org/wiki/Bloom_filter
 
@@ -23,18 +25,4 @@ be considered a collision (false positive). Experiment with size settings that m
 
 The size argument provided to the constructor is a desired size in bits for the BitSet used by the
 bloom filter as a storage mechanism. This value is rounded up to a byte boundary.
-
-## Installing
-
-   $ go get github.com/bradclawsie/bloomfilter
-
-## Docs
-
-   $ go doc github.com/bradclawsie/bloomfilter
-
-## Examples
-
-The included unit test file contains an example use case of reading in a dict file from
-a local path. You will need to edit the test and set that to run it.
-
 
