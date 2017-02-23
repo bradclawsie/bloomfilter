@@ -1,12 +1,12 @@
-// A Bloom Filter implementation using SHA1 for hashing.
+// Package bloomfilter implemented with SHA1 for hashing.
 package bloomfilter
 
 import (
-	"io"
 	"bytes"
 	"crypto/sha1"
 	"encoding/binary"
 	"github.com/bradclawsie/bitset"
+	"io"
 )
 
 // BloomFilter is implemented using the bitset package.
@@ -15,52 +15,53 @@ type BloomFilter struct {
 }
 
 // NewBloomFilter will construct a new BloomFilter intended to model n bits.
-// The BitSet constructor will round that number up to 
+// The BitSet constructor will round that number up to
 // the next byte boundary. The BitSet should be adequately compact.
 // Values written into the bloom filter will use modulo to determine
 // the index to set...meaning, overflow indexes will wrap.
 // The BitSet is already concurrent safe through the use of RWMutex.
 // Note: each entry into the filter sets five values, so having
 // n below be less than five is nonsensical
-func NewBloomFilter(n uint32) (*BloomFilter) {
+func NewBloomFilter(n uint32) *BloomFilter {
 	b := new(BloomFilter)
 	b.bitset = bitset.NewBitSet(n)
 	return b
 }
 
 // New is an alias for NewBloomFilter.
-func New(n uint32) (*BloomFilter) {
+func New(n uint32) *BloomFilter {
 	return NewBloomFilter(n)
 }
 
-// A SHA1 is 160 bits which we can decompose into 5 32-bit ints
-type SHA1_ints [5]uint32
+// SHA1Ints is 160 bits which we can decompose into 5 32-bit ints.
+type SHA1Ints [5]uint32
 
-// The filter values corresponding to offsets derived from the SHA1-ints
+// FilterVals are filter values corresponding to offsets derived from the SHA1-ints.
 type FilterVals [5]bool
 
-// GetSHA1_ints will calculate the sha1 hash of a string. From this 160 bit hash, the five 32 bit ints are returned.
-func GetSHA1_ints(s string) (SHA1_ints,error) {
+// GetSHA1Ints will calculate the sha1 hash of a string.
+// From this 160 bit hash, the five 32 bit ints are returned.
+func GetSHA1Ints(s string) (SHA1Ints, error) {
 	h := sha1.New()
-	io.WriteString(h,s)
-	sha1_bytes := h.Sum(nil)
+	io.WriteString(h, s)
+	sha1Bytes := h.Sum(nil)
 	j := 4
 	k := 5
-	var sha1_ints SHA1_ints
+	var sha1Ints SHA1Ints
 	for i := 0; i < k; j += 4 {
-	 	tb := sha1_bytes[i*4:j]
+		tb := sha1Bytes[i*4 : j]
 		// convert it into a 32 bit int
 		tbuf := bytes.NewBuffer(tb)
 		var u32 uint32
-		err := binary.Read(tbuf,binary.LittleEndian,&u32)
+		err := binary.Read(tbuf, binary.LittleEndian, &u32)
 		if err != nil {
-			var empty_ints SHA1_ints
-			return empty_ints,err
+			var emptyInts SHA1Ints
+			return emptyInts, err
 		}
-		sha1_ints[i] = u32
-	 	i++
+		sha1Ints[i] = u32
+		i++
 	}
-	return sha1_ints,nil
+	return sha1Ints, nil
 }
 
 // Size will return the size of the underlying BitSet. May be greater than
@@ -71,41 +72,41 @@ func (b *BloomFilter) Size() int {
 }
 
 // Write shall enter a true (1) value into the underlying BitSet at the
-// modulo offsets described by the sha1_ints (five 32-bit ints).
+// modulo offsets described by the sha1Ints (five 32-bit ints).
 // Returns a boolean indicating if there was a collision in the filter
 // (meaning all indexes to be set were already set to true)
-func (b *BloomFilter) Write(sha1_ints SHA1_ints) (bool,error) {
+func (b *BloomFilter) Write(sha1Ints SHA1Ints) (bool, error) {
 	l := uint32(b.bitset.Size())
 	// warn if the filter positions have already been written
 	collision := true
-	for _,v := range sha1_ints {
+	for _, v := range sha1Ints {
 		j := v % l
-		existing_at_j,get_err := b.bitset.GetBitN(int(j))
-		if get_err != nil {
-			return false,get_err
+		existingAtJ, getErr := b.bitset.GetBitN(int(j))
+		if getErr != nil {
+			return false, getErr
 		}
-		collision = collision && existing_at_j
-		set_err := b.bitset.SetBitN(int(j))
-		if set_err != nil {
-			return false,set_err
+		collision = collision && existingAtJ
+		setErr := b.bitset.SetBitN(int(j))
+		if setErr != nil {
+			return false, setErr
 		}
 	}
-	return collision,nil
+	return collision, nil
 }
 
-// Read the filter values for the modulo offsets for the SHA1_ints, and also
+// Read the filter values for the modulo offsets for the SHA1Ints, and also
 // send back a convenience bool to indicate if they were all true or not
-func (b *BloomFilter) Read(sha1_ints SHA1_ints) (FilterVals,bool,error) {
+func (b *BloomFilter) Read(sha1Ints SHA1Ints) (FilterVals, bool, error) {
 	l := uint32(b.bitset.Size())
 	var fv FilterVals
 	all := true
-	var get_err error
-	for i,v := range sha1_ints {
-		fv[i],get_err = b.bitset.GetBitN(int(v % l))
-		if get_err != nil {
-			return fv,false,get_err
+	var getErr error
+	for i, v := range sha1Ints {
+		fv[i], getErr = b.bitset.GetBitN(int(v % l))
+		if getErr != nil {
+			return fv, false, getErr
 		}
 		all = all && fv[i]
 	}
-	return fv,all,nil
-} 
+	return fv, all, nil
+}
